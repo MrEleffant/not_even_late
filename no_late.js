@@ -12,8 +12,6 @@ const client = new Client({
 })
 
 let user
-const origin = process.env.ORIGIN
-const destination = process.env.DESTINATION
 
 client.login(process.env.TOKEN)
 
@@ -76,24 +74,28 @@ Heure de depart conseillé : ${heure_de_depart_conseille.getHours()}h${heure_de_
 }
 
 async function mesureTempsTrajet() {
-    console.log("Recuperation du temps de trajet")
-
-    const params = {
-        origin,
-        destination,
-        mode: 'driving',
-        alternatives: true,
-        targetArrivalTime: new Date().setHours(8, 15, 0, 0),
-        key: process.env.APIKEY
+    try {
+        console.log("Recuperation du temps de trajet")
+    
+        const params = {
+            origin: process.env.origin,
+            destination: process.env.destination,
+            mode: 'driving',
+            alternatives: true,
+            targetArrivalTime: new Date().setHours(8, 15, 0, 0),
+            key: process.env.APIKEY
+        }
+    
+        return await axios
+            .get('https://maps.googleapis.com/maps/api/directions/json', { params })
+            .then(response => {
+                const { routes } = response.data;
+                return routes
+            })
+            .catch(error => {
+                console.error('Error:', error)
+            })
+    } catch (error) {
+        console.log(error)
     }
-
-    return await axios
-        .get('https://maps.googleapis.com/maps/api/directions/json', { params })
-        .then(response => {
-            const { routes } = response.data;
-            return routes
-        })
-        .catch(error => {
-            console.error('Error:', error.message)
-        })
 }
