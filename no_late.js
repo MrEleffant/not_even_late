@@ -28,10 +28,10 @@ client.on("ready", async () => {
 })
 
 async function envoiTempsTrajet() {
-    console.log("envoi du temps de Trajet")
+    console.log("Envoi du temps de trajet")
+
     const targetArrivalTime = new Date();
     targetArrivalTime.setHours(8, 15, 0, 0); // 8h15
-
 
     const routes = await mesureTempsTrajet()
     let color = 0x00ff00
@@ -40,44 +40,50 @@ async function envoiTempsTrajet() {
         .setTitle("Temps de trajet")
         .setTimestamp()
 
-    let bestTime
+    let tempsMin
+
     routes.forEach(route => {
         const duration = route.legs.reduce((total, leg) => total + leg.duration.value, 0)
-        const travelTimeInMinutes = Math.ceil(duration / 60) + 6 // 6 minutes de securité
-        const heure_de_depart = new Date(targetArrivalTime.getTime() - (travelTimeInMinutes + 5) * 60 * 1000); // Soustraire le temps de trajet et 5 minutes pour sortir la voiture
+        const travelTimeInMinutes = Math.ceil(duration / 60)
 
-        // memo best route
-        if (!bestTime || travelTimeInMinutes < bestTime) {
-            bestTime = travelTimeInMinutes
+        if (tempsMin === undefined || tempsMin > travelTimeInMinutes) {
+            tempsMin = travelTimeInMinutes
         }
 
+        // ajout de 5 minutes pour se garer et 6 minutes pour se garer
+        const heure_de_depart = new Date(targetArrivalTime.getTime() - (travelTimeInMinutes) * 60 * 1000);
+        const heure_de_depart_conseille = new Date(targetArrivalTime.getTime() - (travelTimeInMinutes + 6 + 5) * 60 * 1000);
 
-        console.log(`Travel time between ${origin} and ${destination} by car: ${travelTimeInMinutes} minutes`)
         embed.addFields({
             name: `Via ${route.summary}`,
-            value: `${travelTimeInMinutes} minutes, heure de départ: ${heure_de_depart.getHours()}:${heure_de_depart.getMinutes()}`
+            value: `Temps de trajet : ${travelTimeInMinutes} min
+Heure de depart : ${heure_de_depart.getHours()}h${heure_de_depart.getMinutes()}
+Heure de depart conseillé : ${heure_de_depart_conseille.getHours()}h${heure_de_depart_conseille.getMinutes()}`
         })
-    })  
+    })
 
-    if (bestTime < 15) {
-        color = 0x00ff00
-    } else if (bestTime < 20) {
-        color = 0xffee00
+    if (tempsMin <= 10) {
+        color = 0x75fa3c
+    } else if (tempsMin <= 15) {
+        color = 0xfadd3c
     } else {
-        color = 0xff0000
+        color = 0xfa3c3c
     }
-    
-    
+
+
     embed.setColor(color)
     user.send({ embeds: [embed] })
 }
 
 async function mesureTempsTrajet() {
+    console.log("Recuperation du temps de trajet")
+
     const params = {
         origin,
         destination,
         mode: 'driving',
         alternatives: true,
+        targetArrivalTime: new Date().setHours(8, 15, 0, 0),
         key: process.env.APIKEY
     }
 
